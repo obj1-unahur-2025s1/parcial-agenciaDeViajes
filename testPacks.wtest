@@ -1,168 +1,172 @@
 import packs.*
 
 describe "Valores del pack" {
-
-    const luis = new Coordinador(
-        cantidadDeViajes = 40,
-        estaMotivado = true,
-        aniosDeExperiencia = 2,
-        rol = guia
+  const luis = new Coordinador(cantidadDeViajes = 40, estaMotivado = true, aniosDeExperiencia = 2, rol = guia)
+  const jimena = new Coordinador(
+    cantidadDeViajes = 19,
+    estaMotivado = false,
+    aniosDeExperiencia = 0,
+    rol = acompaniante
+  )
+  const javier = new Coordinador(
+    cantidadDeViajes = 25,
+    estaMotivado = false,
+    aniosDeExperiencia = 2,
+    rol = asistenteLogistico
+  )
+  const trasladoVIP = new Beneficio(tipo = "Traslado VIP", costo = 10000, estaVigente = true)
+  const seguroAdicional = new Beneficio(tipo = "Seguro Adicional", costo = 15000, estaVigente = true)
+  const accesoVIP = new Beneficio(tipo = "Acceso VIP", costo = 20000, estaVigente = true)
+  const packNacional = new PackNacional(
+    duracionEnDias = 14,
+    precioBase = 100000,
+    coordinador = luis,
+    provinciaDeDestino = "Cordoba"
+  )
+  const packInternacional = new PackInternacional(
+    duracionEnDias = 23,
+    precioBase = 500000,
+    coordinador = jimena,
+    paisDeDestino = "Colombia",
+    cantidadDeEscalas = 0,
+    esDeInteres = true
+  )
+  const packProvincial = new PackProvincial(
+    duracionEnDias = 14,
+    precioBase = 100000,
+    coordinador = luis,
+    provinciaDeDestino = "Cordoba",
+    cantidadDeCiudades = 6
+  )
+  const rolSinRegistrar = object {
+    method condicionAdicional(unCoordinador) = false
+  }
+  
+  method initialize() {
+    packProvincial.agregarActividad("Trekking")
+    packProvincial.agregarActividad("Visita al río")
+    packProvincial.agregarActividad("Salida a comer")
+    packProvincial.agregarActividad("Visita a museo")
+    packProvincial.agregarBeneficio(trasladoVIP)
+    packProvincial.agregarBeneficio(accesoVIP)
+    packProvincial.agregarBeneficio(seguroAdicional)
+  }
+  
+  // Primera parte
+  test "Un pack nacional sin beneficios" {
+    assert.equals(packNacional.precioBase(), packNacional.costoFinal())
+  }
+  
+  test "Un pack nacional con 2 beneficios vigentes" {
+    packNacional.agregarBeneficio(trasladoVIP)
+    packNacional.agregarBeneficio(seguroAdicional)
+    assert.equals(125000, packNacional.costoFinal())
+  }
+  
+  test "Pack internacional sin beneficios" {
+    assert.equals(600000, packInternacional.costoFinal())
+  }
+  
+  // Segunda parte
+  test "Un guía motivado con 21 viajes es altamente calificado" {
+    assert.that(luis.esAltamenteCalificado())
+  }
+  
+  test "Asistente logístico con menos de 3 años de experiencia no es calificado" {
+    assert.notThat(javier.esAltamenteCalificado())
+  }
+  
+  test "Un acompañante con cualquier cantidad de viajes es siempre calificado si supera los 20" {
+    assert.notThat(jimena.esAltamenteCalificado())
+    jimena.sumarViaje()
+    jimena.sumarViaje()
+    assert.that(jimena.esAltamenteCalificado())
+  }
+  
+  // Tercera parte
+  test "Un pack nacional es premium con un coordinador altamente calificado y más de 10 días" {
+    assert.that(packNacional.esPremium())
+  }
+  
+  test "Un pack nacional no es premium con menos de 10 días" {
+    packNacional.duracionEnDias(9)
+    assert.notThat(packNacional.esPremium())
+  }
+  
+  test "Un pack nacional no es premium con un coordinador que no está altamente calificado" {
+    packNacional.coordinador(jimena)
+    assert.notThat(packNacional.esPremium())
+  }
+  
+  test "Un pack internacional es premium si es lugar de interés, tiene +20 días y ninguna escala" {
+    assert.that(packInternacional.esPremium())
+  }
+  
+  test "Un pack internacional no es premium si no es lugar de interés" {
+    packInternacional.esDeInteres(false)
+    assert.notThat(packInternacional.esPremium())
+  }
+  
+  test "Un pack internacional no es premium con menos de 20 días" {
+    packInternacional.duracionEnDias(19)
+    assert.notThat(packInternacional.esPremium())
+  }
+  
+  test "Un pack internacional no es premium si tiene una escala" {
+    packInternacional.cantidadDeEscalas(1)
+    assert.notThat(packInternacional.esPremium())
+  }
+  
+  // Cuarta parte
+  test "Un pack provincial es premium con un al menos 4 actividades, +5 ciudades y 3 beneficios vigentes" {
+    assert.that(packProvincial.esPremium())
+  }
+  
+  test "Un pack provincial no es premium con menos de 4 actividades" {
+    packProvincial.quitarActividad("Trekking")
+    assert.notThat(packProvincial.esPremium())
+  }
+  
+  test "Un pack provincial no es premium con menos de 5 ciudades" {
+    packProvincial.cantidadDeCiudades(4)
+    assert.notThat(packProvincial.esPremium())
+  }
+  
+  test "Un pack provincial no es premium con menos de 3 beneficios vigentes" {
+    accesoVIP.dejarDeEstarVigente()
+    assert.notThat(packProvincial.esPremium())
+  }
+  
+  test "Un pack provincial que no es premium devuelve el mismo valor del precio final" {
+    packProvincial.cantidadDeCiudades(4)
+    assert.equals(145000, packProvincial.costoFinal())
+  }
+  
+  test "Un pack provincial que es premium devuelve el valor más el 5%" {
+    assert.equals(152250, packProvincial.costoFinal())
+  }
+  
+  test "Un coordinador que se le asigna un rol que no existe, lanza una excepción" {
+    assert.throwsExceptionWithMessage(
+      "El rol debe ser guia, asistente logístico o acompañante",
+      { javier.rol(rolSinRegistrar) }
     )
-    const jimena = new Coordinador(
-        cantidadDeViajes = 19,
-        estaMotivado = false,
-        aniosDeExperiencia = 0,
-        rol = acompaniante
+    
+    assert.throwsException({ javier.rol(rolSinRegistrar) })
+    
+/* 
+    Cuando se lanza la excepción
+    assert.throwsExceptionLike(
+      new Exception(message = "El rol debe ser guia, asistente logístico o acompañante"),
+      { javier.rol(rolSinRegistrar) }
     )
 
-    const javier = new Coordinador(
-        cantidadDeViajes = 25,
-        estaMotivado = false,
-        aniosDeExperiencia = 2,
-        rol = asistenteLogistico
+    Cuando se lanza el self.error se lanza un DomainException
+*/
+    assert.throwsExceptionLike(
+      new DomainException(message = "El rol debe ser guia, asistente logístico o acompañante"),
+      { javier.rol(rolSinRegistrar) }
     )
-
-    const trasladoVIP = new Beneficio(
-        tipo = "Traslado VIP",
-        costo = 10000,
-        estaVigente = true
-    )
-    const seguroAdicional = new Beneficio(
-        tipo = "Seguro Adicional",
-        costo = 15000,
-        estaVigente = true
-    )
-    const accesoVIP = new Beneficio(
-        tipo = "Acceso VIP",
-        costo = 20000,
-        estaVigente = true
-    )
-
-    const packNacional = new PackNacional(
-        duracionEnDias = 14,
-        precioBase = 100000,
-        coordinador = luis,
-        provinciaDeDestino="Cordoba"
-    )
-
-    const packInternacional = new PackInternacional(
-        duracionEnDias = 23,
-        precioBase = 500000,
-        coordinador = jimena,
-        paisDeDestino="Colombia",
-        cantidadDeEscalas = 0,
-        esDeInteres = true
-    )
-
-    const packProvincial = new PackProvincial(
-        duracionEnDias = 14,
-        precioBase = 100000,
-        coordinador = luis,
-        provinciaDeDestino="Cordoba",
-        cantidadDeCiudades=6
-    )
-
-    method initialize() {
-        packProvincial.agregarActividad("Trekking")
-        packProvincial.agregarActividad("Visita al río")
-        packProvincial.agregarActividad("Salida a comer")
-        packProvincial.agregarActividad("Visita a museo")
-        packProvincial.agregarBeneficio(trasladoVIP)
-        packProvincial.agregarBeneficio(accesoVIP)
-        packProvincial.agregarBeneficio(seguroAdicional)
-    }
-
-    // Primera parte
-    test "Un pack nacional sin beneficios" {
-        assert.equals(packNacional.precioBase(), packNacional.costoFinal())
-    }
-
-    test "Un pack nacional con 2 beneficios vigentes" {
-        packNacional.agregarBeneficio(trasladoVIP)
-        packNacional.agregarBeneficio(seguroAdicional)
-        assert.equals(125000, packNacional.costoFinal())
-    }
-
-    test "Pack internacional sin beneficios" {
-        assert.equals(600000, packInternacional.costoFinal())
-    }
-
-    // Segunda parte
-    test "Un guía motivado con 21 viajes es altamente calificado" {
-        assert.that(luis.esAltamenteCalificado())
-    }
-
-    test "Asistente logístico con menos de 3 años de experiencia no es calificado" {
-        assert.notThat(javier.esAltamenteCalificado())
-    }
-
-    test "Un acompañante con cualquier cantidad de viajes es siempre calificado si supera los 20" {
-        assert.notThat(jimena.esAltamenteCalificado())
-        jimena.sumarViaje()
-        jimena.sumarViaje()
-        assert.that(jimena.esAltamenteCalificado())
-    }
-
-    // Tercera parte
-    test "Un pack nacional es premium con un coordinador altamente calificado y más de 10 días" {
-        assert.that(packNacional.esPremium())
-    }
-
-    test "Un pack nacional no es premium con menos de 10 días" {
-        packNacional.duracionEnDias(9)
-        assert.notThat(packNacional.esPremium())
-    }
-
-    test "Un pack nacional no es premium con un coordinador que no está altamente calificado" {
-        packNacional.coordinador(jimena)
-        assert.notThat(packNacional.esPremium())
-    }
-
-    test "Un pack internacional es premium si es lugar de interés, tiene +20 días y ninguna escala" {
-        assert.that(packInternacional.esPremium())
-    }
-
-    test "Un pack internacional no es premium si no es lugar de interés" {
-        packInternacional.esDeInteres(false)
-        assert.notThat(packInternacional.esPremium())
-    }
-
-    test "Un pack internacional no es premium con menos de 20 días" {
-        packInternacional.duracionEnDias(19)
-        assert.notThat(packInternacional.esPremium())
-    }
-
-    test "Un pack internacional no es premium si tiene una escala" {
-        packInternacional.cantidadDeEscalas(1)
-        assert.notThat(packInternacional.esPremium())
-    }
-
-    // Cuarta parte
-    test "Un pack provincial es premium con un al menos 4 actividades, +5 ciudades y 3 beneficios vigentes" {
-        assert.that(packProvincial.esPremium())
-    }
-
-    test "Un pack provincial no es premium con menos de 4 actividades" {
-        packProvincial.quitarActividad("Trekking")
-        assert.notThat(packProvincial.esPremium())
-    }
-
-    test "Un pack provincial no es premium con menos de 5 ciudades" {
-        packProvincial.cantidadDeCiudades(4)
-        assert.notThat(packProvincial.esPremium())
-    }
-
-    test "Un pack provincial no es premium con menos de 3 beneficios vigentes" {
-        accesoVIP.dejarDeEstarVigente()
-        assert.notThat(packProvincial.esPremium())
-    }
-
-    test "Un pack provincial que no es premium devuelve el mismo valor del precio final" {
-        packProvincial.cantidadDeCiudades(4)
-        assert.equals(145000, packProvincial.costoFinal())
-    }
-
-    test "Un pack provincial que es premium devuelve el valor más el 5%" {
-        assert.equals(152250, packProvincial.costoFinal())
-    }
+    
+  }
 }
