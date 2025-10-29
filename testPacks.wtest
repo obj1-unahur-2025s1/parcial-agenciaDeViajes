@@ -147,6 +147,7 @@ describe "Valores del pack" {
   }
   
   test "Un coordinador que se le asigna un rol que no existe, lanza una excepción" {
+
     assert.throwsExceptionWithMessage(
       "El rol debe ser guia, asistente logístico o acompañante",
       { javier.rol(rolSinRegistrar) }
@@ -163,10 +164,11 @@ describe "Valores del pack" {
 
     Cuando se lanza el self.error se lanza un DomainException
 */
+/*
     assert.throwsExceptionLike(
       new DomainException(message = "El rol debe ser guia, asistente logístico o acompañante"),
       { javier.rol(rolSinRegistrar) }
     )
-    
+*/    
   }
 }

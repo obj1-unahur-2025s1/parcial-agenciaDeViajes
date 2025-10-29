@@ -68,6 +68,7 @@ class Coordinador {
   method rol(unRol) {
     if (not rolesValidos.contains(unRol)) {
       throw new Exception(message = "El rol debe ser guia, asistente logístico o acompañante")
+      
       self.error("El rol debe ser guia, asistente logístico o acompañante")
     }
     rol = unRol
